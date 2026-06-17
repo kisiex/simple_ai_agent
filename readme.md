@@ -1,3 +1,4 @@
+# About
 AI-powered order management assistant built with Spring AI, OpenAI and Qdrant.
 
 ## Features:
@@ -59,13 +60,22 @@ The following services will be started:
 ## Ports:
 
 | Service                | Port |
-| ---------------------- | ---- |
+|------------------------|------|
 | Order Service          | 8080 |
+| Payment Service        | 8081 |
 | Payment Service (gRPC) | 9090 |
 | Kafka                  | 9092 |
 | Qdrant HTTP API        | 6333 |
 | Qdrant gRPC API        | 6334 |
 
+
+## Rules
+
+Business rules are defined as markdown documents located in the [rules folder](order-service/src/main/resources/rules) and consists of:
+- [Order cancellation rules](order-service/src/main/resources/rules/order-cancellation-rules.md)
+- [Payment rules](order-service/src/main/resources/rules/payment-rules.md)
+
+On application startup, these documents are embedded and stored in Qdrant. They are then used by the Retrieval-Augmented Generation (RAG) layer to provide domain-specific context for the AI agent.
 
 ## Examples
 
@@ -125,3 +135,9 @@ In the background:
 - Payment-service is called via gRPC
 - Payment-service emit Kafka event
 - the order is marked as PAID 
+
+## TODO list:
+- more functionalities
+- more rules 
+- refactor importing to Qdrant
+- TBD
