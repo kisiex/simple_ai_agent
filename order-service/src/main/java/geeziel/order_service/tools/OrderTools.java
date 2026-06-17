@@ -1,9 +1,7 @@
 package geeziel.order_service.tools;
 
-import geeziel.order_service.dto.ChangeOrderStatusResponse;
-import geeziel.order_service.dto.NewOrderRequest;
-import geeziel.order_service.dto.OrderDetails;
-import geeziel.order_service.dto.OrderStatus;
+import geeziel.order_service.dto.*;
+import geeziel.order_service.service.OrderPaymentService;
 import geeziel.order_service.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -14,9 +12,11 @@ import org.springframework.stereotype.Service;
 public class OrderTools {
 
     private final OrderService orderService;
+    private final OrderPaymentService orderPaymentService;
 
-    public OrderTools(OrderService orderService) {
+    public OrderTools(OrderService orderService, OrderPaymentService orderPaymentService) {
         this.orderService = orderService;
+        this.orderPaymentService = orderPaymentService;
     }
 
     @Tool(description = """
@@ -71,4 +71,15 @@ public class OrderTools {
     public OrderDetails createOrder(NewOrderRequest orderRequest) {
         return OrderDetails.from(orderService.createOrder(orderRequest));
     }
+
+    @Tool(description = """
+        Start payment for an order by id.
+        Use this tool when user wants to pay for an order.
+        Payment can be started only if order is not PAID and not CANCELLED and not COMPLETED.
+        Before process payment for order you have to change its status to PROCESSING
+        """)
+    public PaymentStartResponse payForOrder(Long orderId) {
+        return orderPaymentService.payForOrder(orderId);
+    }
+
 }

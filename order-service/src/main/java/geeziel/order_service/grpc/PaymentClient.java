@@ -15,13 +15,12 @@ public class PaymentClient {
 
     public StartPaymentResponse startPayment(Order order) {
 
-        StartPaymentRequest request =
+        return paymentStub.startPayment(
                 StartPaymentRequest.newBuilder()
                         .setOrderId(order.getId())
                         .setCustomerName(order.getCustomerName())
                         .setAmount(order.getAmount().doubleValue())
-                        .build();
-
-        return paymentStub.startPayment(request);
+                        .build()
+        );
     }
 }

@@ -19,6 +19,6 @@ public class OrderController {
 
     @PostMapping("/orders/{orderId}/pay")
     public PaymentStartResponse pay(@PathVariable Long orderId) {
-        return orderPaymentService.startPayment(orderId);
+        return orderPaymentService.payForOrder(orderId);
     }
 }

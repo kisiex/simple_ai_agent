@@ -20,13 +20,32 @@ public class RulesLoader {
 
     private final VectorStore vectorStore;
 
+    private static final Map<String, String> RULE_FILES = Map.of(
+            "Order cancellation rules", "/rules/order-cancellation-rules.md",
+            "Payment rules", "/rules/payment-rules.md"
+    );
+
     @PostConstruct
-    public void load() throws IOException {
-        try (InputStream inputStream = getClass()
-                .getResourceAsStream("/rules/order-cancellation-rules.md")) {
+    public void load() {
+
+        vectorStore.delete("type == 'business-rules'");
+
+        RULE_FILES.forEach((title, path) -> {
+            try {
+                loadDocument(title, path);
+                log.info("Successfully added document to vector store. title={}, path={}", title, path);
+            } catch (Exception e) {
+                log.error("Exception during loading document. title={}, path={}", title, path, e);
+                throw new IllegalStateException("Failed to load rules document: " + title, e);
+            }
+        });
+    }
+
+    private void loadDocument(String title, String path) throws IOException {
+        try (InputStream inputStream = getClass().getResourceAsStream(path)) {
 
             if (inputStream == null) {
-                throw new IllegalStateException("Rules file not found");
+                throw new IllegalStateException("Rules file not found: " + path);
             }
 
             String content = new String(
@@ -37,14 +56,13 @@ public class RulesLoader {
             Document document = new Document(
                     content,
                     Map.of(
-                            "type", "order-cancellation-rules",
-                            "source", "order-cancellation-rules.md"
+                            "type", "business-rules",
+                            "title", title,
+                            "source", path
                     )
             );
 
             vectorStore.add(List.of(document));
-
-            log.info("Loaded order cancellation rules into vector store");
         }
     }
 }

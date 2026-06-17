@@ -21,6 +21,6 @@ public class PaymentEventConsumer {
     )
     public void handlePaymentCompleted(PaymentCompletedEvent event) {
         log.info("Received payment completed event: {}", event);
-        orderService.markAsPaid(event.orderId());
+        orderService.handlePaymentCompleted(event);
     }
 }

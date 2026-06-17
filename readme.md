@@ -86,11 +86,42 @@ Example response:
 
 #### Execute business logic with RAG:
 
-> /rag-agent/ask?q=can order 123 be cancelled? cancell if eliglible
+##### 1. example 
+> /rag-agent/ask?q=can order 123 be cancelled? cancel if eligible
 
-Example response:
+response should be like:
 > Order 123 was eligible and has been cancelled successfully.
 >
 > Details:
 > - Previous status: PROCESSING
 > - Current status: CANCELLED
+
+
+##### 2. example with payment:
+> POST /api/agent/ask
+>
+> {
+> "question": "create order for customer Adam with value of  199.99"
+> }
+
+and with newly created order
+> GET /rag-agent/ask?q=can payment be started for order {order_id}? if so, pay for the order 
+
+will result in 
+
+>Yes — payment could be started for order 1, and it has been paid successfully.
+>
+> Order 1 was:
+> - Status: NEW
+> - Amount: 199.99
+> - Customer: Adam
+>
+> Payment result:
+> - Payment status: COMPLETED
+
+In the background:
+- there is check of status of the order
+- the order is mark as PROCESSING
+- Payment-service is called via gRPC
+- Payment-service emit Kafka event
+- the order is marked as PAID 

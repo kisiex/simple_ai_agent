@@ -1,5 +1,6 @@
 package geeziel.order_service.service;
 
+import geeziel.events.PaymentCompletedEvent;
 import geeziel.order_service.dto.ChangeOrderStatusResponse;
 import geeziel.order_service.dto.NewOrderRequest;
 import geeziel.order_service.dto.OrderStatus;
@@ -21,6 +22,7 @@ public class OrderService {
         this.repository = repository;
     }
 
+    @Transactional(readOnly = true)
     public Order findOrder(Long id) {
         log.debug("Querying for order with id: " + id);
 
@@ -34,13 +36,14 @@ public class OrderService {
     public ChangeOrderStatusResponse markAsPaid(Long orderId) {
 
         Order order = repository.findById(orderId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Order not found: " + orderId));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new IllegalStateException(
-                    "Cancelled order cannot be paid");
+            throw new IllegalStateException("Cancelled order cannot be paid");
+        }
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalStateException("Completed order cannot be paid");
         }
 
         OrderStatus previousStatus = order.getStatus();
@@ -48,6 +51,32 @@ public class OrderService {
         order.setStatus(OrderStatus.PAID);
 
         return new ChangeOrderStatusResponse(orderId, false, previousStatus, OrderStatus.PAID,
+                "Order status change");
+    }
+
+    @Transactional
+    public ChangeOrderStatusResponse markAsProcessing(Long orderId) {
+
+        Order order = repository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Cancelled order cannot be mark as processing");
+        }
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalStateException("Completed order cannot be mark as processing");
+        }
+
+        if (order.getStatus() == OrderStatus.PAID) {
+            throw new IllegalStateException("Paid order cannot be mark as processing");
+        }
+
+        OrderStatus previousStatus = order.getStatus();
+
+        order.setStatus(OrderStatus.PROCESSING);
+
+        return new ChangeOrderStatusResponse(orderId, false, previousStatus, OrderStatus.PROCESSING,
                 "Order status change");
     }
 
@@ -97,6 +126,16 @@ public class OrderService {
     public Order createOrder(NewOrderRequest orderRequest) {
         var order = new Order(orderRequest.customer(), orderRequest.amount());
         return repository.save(order);
+    }
+
+    @Transactional
+    public void handlePaymentCompleted(PaymentCompletedEvent event) {
+        Order order = repository.findById(event.orderId())
+                .orElseThrow();
+
+        if (order.getStatus() != OrderStatus.CANCELLED) {
+            order.setStatus(OrderStatus.PAID);
+        }
     }
 
 }
